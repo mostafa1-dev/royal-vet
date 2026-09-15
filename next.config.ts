@@ -45,8 +45,10 @@ const nextConfig: NextConfig = {
   },
   productionBrowserSourceMaps: false,
   turbopack: {}, // Silence Turbopack warning about webpack config
-  serverActions: {
-    bodySizeLimit: '50mb',
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '50mb',
+    },
   },
 };
 
