@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'ar_EG',
-    url: 'https://royalvet.clinic', // Adjust when domain is bought
+    url: 'https://royalveteg.com', // Adjust when domain is bought
     siteName: 'Royal Vet | رويال ڤيت',
     title: 'Royal Vet | رويال ڤيت',
     description: 'العيادة البيطرية الأفضل لرعاية أليفك بمعايير عالمية.',

@@ -245,14 +245,25 @@ export default function ComingSoonPage() {
                   <motion.button 
                     type="submit"
                     disabled={status === 'loading'}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="w-full md:w-auto px-8 py-5 md:py-0 md:absolute md:left-1.5 md:top-1.5 md:bottom-1.5 rounded-[1.5rem] md:rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-black font-bold text-base md:text-lg shadow-[0_0_20px_rgba(212,175,55,0.3)] hover:shadow-[0_0_30px_rgba(212,175,55,0.5)] flex items-center justify-center gap-3 whitespace-nowrap transition-all duration-300 bg-[length:200%_auto] hover:bg-[position:right_center]"
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.95, y: 2 }}
+                    className="group relative w-full md:w-auto px-8 py-5 md:py-0 md:absolute md:left-1.5 md:top-1.5 md:bottom-1.5 rounded-[1.5rem] md:rounded-full font-bold text-base md:text-lg flex items-center justify-center gap-3 whitespace-nowrap overflow-hidden transition-all duration-500 shadow-[0_10px_20px_rgba(212,175,55,0.2),inset_0_-4px_8px_rgba(0,0,0,0.3),inset_0_2px_4px_rgba(255,255,255,0.5)] hover:shadow-[0_15px_30px_rgba(212,175,55,0.4),inset_0_-2px_4px_rgba(0,0,0,0.4),inset_0_4px_8px_rgba(255,255,255,0.6)]"
                   >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="rotate-180 hidden md:block">
+                    {/* Metallic 3D Background */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-[#FCF6BA] via-[#D4AF37] to-[#B38728] transition-all duration-500 group-hover:from-[#FFFFFF] group-hover:via-[#F3E5AB] group-hover:to-[#D4AF37]"></div>
+                    
+                    {/* Inner Edge Highlight */}
+                    <div className="absolute inset-0 rounded-[1.5rem] md:rounded-full border border-white/40 pointer-events-none"></div>
+
+                    {/* Animated Glare/Shine */}
+                    <div className="absolute top-0 left-[-100%] w-[50%] h-full bg-gradient-to-r from-transparent via-white/50 to-transparent skew-x-[-20deg] group-hover:left-[200%] transition-all duration-1000 ease-in-out"></div>
+
+                    <span className="relative z-10 text-[#2A2000] drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)]">
+                      {status === 'loading' ? 'جاري التسجيل...' : 'عرفني لما يجهز'}
+                    </span>
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 rotate-180 hidden md:block text-[#2A2000] drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)] group-hover:translate-x-1 transition-transform duration-300">
                       <path d="M5 12h14M12 5l7 7-7 7"/>
                     </svg>
-                    <span>{status === 'loading' ? 'جاري التسجيل...' : 'عرفني لما يجهز'}</span>
                   </motion.button>
                 </motion.form>
 
