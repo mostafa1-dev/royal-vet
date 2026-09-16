@@ -157,39 +157,172 @@ export default function ComingSoonPage() {
             {status === 'success' ? (
               <motion.div 
                 key="success"
-                initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                transition={{ type: 'spring', stiffness: 200, damping: 25 }}
-                className="flex flex-col items-center justify-center py-10 px-6 rounded-3xl bg-white/5 backdrop-blur-xl border border-[#D4AF37]/30 shadow-[0_0_50px_rgba(212,175,55,0.1)] w-full relative overflow-hidden"
+                transition={{ type: 'spring', stiffness: 240, damping: 22 }}
+                className="flex flex-col items-center justify-center py-12 px-6 sm:px-10 rounded-[2.5rem] bg-gradient-to-b from-[#1A1408]/95 via-[#0D0B06]/95 to-[#050402]/95 backdrop-blur-2xl border border-[#D4AF37]/50 shadow-[0_0_80px_rgba(212,175,55,0.25),inset_0_1px_2px_rgba(255,255,255,0.2)] w-full relative overflow-hidden text-center"
               >
-                <div className="absolute inset-0 bg-gradient-to-tr from-[#D4AF37]/5 to-transparent pointer-events-none" />
+                {/* Floating Festive Gold Particles / Confetti */}
+                <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                  {[...Array(16)].map((_, i) => (
+                    <motion.span
+                      key={i}
+                      initial={{ 
+                        x: 0, 
+                        y: 0, 
+                        scale: 0, 
+                        opacity: 0,
+                        rotate: 0 
+                      }}
+                      animate={{ 
+                        x: (i % 2 === 0 ? 1 : -1) * (40 + (i * 24) % 240),
+                        y: -30 - ((i * 35) % 180),
+                        scale: [0, 1.2, 0.8, 0],
+                        opacity: [0, 1, 0.8, 0],
+                        rotate: (i % 2 === 0 ? 360 : -360) + i * 45
+                      }}
+                      transition={{ 
+                        duration: 3 + (i % 4) * 0.4,
+                        repeat: Infinity,
+                        repeatDelay: 0.6 + (i % 3) * 0.5,
+                        ease: "easeOut",
+                        delay: i * 0.12
+                      }}
+                      className="absolute top-1/2 left-1/2 select-none"
+                    >
+                      {i % 4 === 0 ? (
+                        <span className="text-[#F3E5AB] text-lg filter drop-shadow-[0_0_8px_#D4AF37]">✦</span>
+                      ) : i % 4 === 1 ? (
+                        <span className="text-[#D4AF37] text-sm filter drop-shadow-[0_0_6px_#D4AF37]">★</span>
+                      ) : i % 4 === 2 ? (
+                        <span className="inline-block w-2.5 h-2.5 rounded-full bg-gradient-to-br from-[#FFF5C0] to-[#D4AF37] shadow-[0_0_10px_#D4AF37]" />
+                      ) : (
+                        <span className="text-[#AA771C] text-xs">✧</span>
+                      )}
+                    </motion.span>
+                  ))}
+                </div>
+
+                {/* Ambient Golden Radial Light */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-72 h-72 bg-[#D4AF37]/20 blur-[70px] rounded-full pointer-events-none" />
+
+                {/* Royal Crown Crest & Animated Rings */}
+                <div className="relative mb-6">
+                  {/* Rotating Outer Dashed Gold Ring */}
+                  <motion.div 
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+                    className="absolute -inset-3 rounded-full border border-dashed border-[#D4AF37]/40 pointer-events-none"
+                  />
+                  
+                  {/* Pulsing Aura */}
+                  <motion.div 
+                    animate={{ scale: [1, 1.15, 1], opacity: [0.3, 0.6, 0.3] }}
+                    transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+                    className="absolute -inset-1 rounded-full bg-gradient-to-tr from-[#D4AF37] to-[#F3E5AB] blur-md"
+                  />
+
+                  {/* Center Golden Medallion */}
+                  <motion.div 
+                    initial={{ scale: 0, rotate: -30 }}
+                    animate={{ scale: 1, rotate: 0 }}
+                    transition={{ type: 'spring', delay: 0.15, stiffness: 240, damping: 16 }}
+                    className="relative w-20 h-20 rounded-full bg-gradient-to-br from-[#FFF5C0] via-[#D4AF37] to-[#8C6212] p-[2px] shadow-[0_10px_30px_rgba(212,175,55,0.5)] flex items-center justify-center"
+                  >
+                    <div className="w-full h-full rounded-full bg-[#120E05] flex items-center justify-center relative overflow-hidden">
+                      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(212,175,55,0.35)_0%,transparent_70%)]" />
+                      
+                      {/* Royal Crown SVG */}
+                      <svg width="34" height="34" viewBox="0 0 24 24" fill="none" className="text-[#F3E5AB] filter drop-shadow-[0_2px_8px_rgba(212,175,55,0.8)] relative z-10" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M5 16L3 5L8.5 10L12 4L15.5 10L21 5L19 16H5Z" fill="url(#crownGrad)" stroke="#FCF6BA" strokeWidth="1.2" strokeLinejoin="round" />
+                        <path d="M5 19H19" stroke="#FCF6BA" strokeWidth="2" strokeLinecap="round" />
+                        <defs>
+                          <linearGradient id="crownGrad" x1="12" y1="4" x2="12" y2="19" gradientUnits="userSpaceOnUse">
+                            <stop stopColor="#FFF5C0" />
+                            <stop offset="0.5" stopColor="#D4AF37" />
+                            <stop offset="1" stopColor="#8C6212" />
+                          </linearGradient>
+                        </defs>
+                      </svg>
+                    </div>
+
+                    {/* Checkmark Badge */}
+                    <div className="absolute -bottom-1 -left-1 w-7 h-7 rounded-full bg-emerald-500 border-2 border-black flex items-center justify-center shadow-lg">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                    </div>
+                  </motion.div>
+                </div>
+
+                {/* VIP Membership Badge */}
                 <motion.div 
-                  initial={{ scale: 0, rotate: -45 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ type: 'spring', delay: 0.2, stiffness: 200, damping: 15 }}
-                  className="w-16 h-16 rounded-full bg-gradient-to-br from-[#D4AF37] to-[#F3E5AB] flex items-center justify-center mb-5 shadow-[0_0_20px_rgba(212,175,55,0.4)]"
-                >
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M20 6L9 17l-5-5"/>
-                  </svg>
-                </motion.div>
-                <motion.h3 
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.3 }}
-                  className="text-2xl md:text-3xl font-bold text-white mb-3"
+                  transition={{ delay: 0.25 }}
+                  className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#D4AF37]/50 bg-[#D4AF37]/10 mb-4 backdrop-blur-md"
                 >
-                  مرحباً بك في <span className="text-[#D4AF37]">عالم رويال ڤيت!</span>
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                  <span className="text-xs md:text-sm font-semibold text-[#F3E5AB] tracking-wide">عضوية النخبة الملكية #VIP</span>
+                </motion.div>
+
+                {/* Main Headline */}
+                <motion.h3 
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.35 }}
+                  className="text-2xl sm:text-3xl md:text-4xl font-bold font-serif text-white mb-3 tracking-wide"
+                >
+                  {name ? (
+                    <>أهلاً بك يا <span className="bg-gradient-to-r from-[#FFF5C0] via-[#D4AF37] to-[#F3E5AB] bg-clip-text text-transparent">{name}</span> في العصر الجديد!</>
+                  ) : (
+                    <>مرحباً بك في <span className="bg-gradient-to-r from-[#FFF5C0] via-[#D4AF37] to-[#F3E5AB] bg-clip-text text-transparent">النخبة الملكية لـ Royal Vet</span></>
+                  )}
                 </motion.h3>
+
+                {/* Welcome Subtext */}
                 <motion.p 
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ delay: 0.4 }}
-                  className="text-gray-400 text-center text-sm md:text-base max-w-sm"
+                  transition={{ delay: 0.45 }}
+                  className="text-gray-300 text-sm sm:text-base md:text-lg max-w-lg mx-auto leading-relaxed mb-8 font-sans"
                 >
-                  تم تسجيل بياناتك بنجاح، هنكون على تواصل معاك فور إطلاق النظام لتعيش تجربة استثنائية.
+                  تم تأكيد حجز مقعدك في قائمة الشرف الأولى بنجاح. سنكون على تواصل مباشر معك فور تدشين الصرح البيطري لتستمتع بأرقى تجربة عناية استثنائية لأليفك.
                 </motion.p>
+
+                {/* Action Buttons */}
+                <motion.div 
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.55 }}
+                  className="flex flex-wrap items-center justify-center gap-4 w-full"
+                >
+                  <a 
+                    href="/api/catalog"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2.5 px-7 py-3 rounded-full bg-gradient-to-r from-[#D4AF37] via-[#F3E5AB] to-[#D4AF37] text-[#1A1408] font-bold text-sm sm:text-base shadow-[0_8px_25px_rgba(212,175,55,0.35)] hover:shadow-[0_12px_35px_rgba(212,175,55,0.5)] hover:scale-105 active:scale-95 transition-all duration-300"
+                  >
+                    <span>استكشف الكتالوج الآن</span>
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                  </a>
+
+                  <button
+                    onClick={() => {
+                      setStatus('idle');
+                      setName('');
+                      setPhone('');
+                    }}
+                    className="px-6 py-3 rounded-full border border-white/15 bg-white/5 hover:bg-white/10 text-gray-300 hover:text-white text-sm font-medium transition-all"
+                  >
+                    تسجيل رقم آخر
+                  </button>
+                </motion.div>
               </motion.div>
             ) : (
               <motion.div key="form" exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
@@ -203,7 +336,7 @@ export default function ComingSoonPage() {
                   onSubmit={handleSubmit}
                   className="relative flex flex-col md:flex-row items-center w-full rounded-[2rem] md:rounded-full glass-premium p-2 md:p-1.5 md:pl-2 md:pr-6 hover:shadow-[0_0_40px_rgba(212,175,55,0.15)] focus-within:shadow-[0_0_50px_rgba(212,175,55,0.25)] focus-within:border-[#D4AF37]/30 transition-all duration-500 group"
                 >
-                  <div className="flex flex-col md:flex-row items-center flex-1 w-full relative z-10 gap-2 md:gap-0 md:pl-[200px]">
+                  <div className="flex flex-col md:flex-row items-center flex-1 w-full relative z-10 gap-2 md:gap-0 md:pl-[210px]">
                     
                     {/* Name Input */}
                     <div className="flex items-center gap-4 text-[#D4AF37] w-full px-4 py-5 md:py-3 border-b md:border-b-0 md:border-l border-white/5 md:border-white/10 transition-colors group-hover:border-white/20">
@@ -245,25 +378,52 @@ export default function ComingSoonPage() {
                   <motion.button 
                     type="submit"
                     disabled={status === 'loading'}
-                    whileHover={{ scale: 1.05, y: -2 }}
-                    whileTap={{ scale: 0.95, y: 2 }}
-                    className="group relative w-full md:w-auto px-8 py-5 md:py-0 md:absolute md:left-1.5 md:top-1.5 md:bottom-1.5 rounded-[1.5rem] md:rounded-full font-bold text-base md:text-lg flex items-center justify-center gap-3 whitespace-nowrap overflow-hidden transition-all duration-500 shadow-[0_10px_20px_rgba(212,175,55,0.2),inset_0_-4px_8px_rgba(0,0,0,0.3),inset_0_2px_4px_rgba(255,255,255,0.5)] hover:shadow-[0_15px_30px_rgba(212,175,55,0.4),inset_0_-2px_4px_rgba(0,0,0,0.4),inset_0_4px_8px_rgba(255,255,255,0.6)]"
+                    whileHover={{ scale: 1.04, y: -2 }}
+                    whileTap={{ scale: 0.94, y: 3 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                    className="group relative w-full md:w-auto px-9 py-5 md:py-0 md:absolute md:left-2 md:top-2 md:bottom-2 rounded-[1.8rem] md:rounded-full font-bold text-base md:text-lg flex items-center justify-center gap-3 whitespace-nowrap overflow-hidden select-none transition-all duration-300 shadow-[0_12px_30px_rgba(212,175,55,0.35),0_0_20px_rgba(212,175,55,0.2),inset_0_2px_4px_rgba(255,255,255,0.8),inset_0_-4px_8px_rgba(0,0,0,0.45)] hover:shadow-[0_16px_40px_rgba(212,175,55,0.55),0_0_30px_rgba(212,175,55,0.35),inset_0_3px_5px_rgba(255,255,255,1),inset_0_-3px_6px_rgba(0,0,0,0.35)]"
                   >
-                    {/* Metallic 3D Background */}
-                    <div className="absolute inset-0 bg-gradient-to-b from-[#FCF6BA] via-[#D4AF37] to-[#B38728] transition-all duration-500 group-hover:from-[#FFFFFF] group-hover:via-[#F3E5AB] group-hover:to-[#D4AF37]"></div>
+                    {/* Outer ambient golden aura */}
+                    <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-[#D4AF37] to-[#F3E5AB] blur-md opacity-30 group-hover:opacity-70 transition-opacity duration-500 pointer-events-none" />
+
+                    {/* Metallic 3D Gold Gradient */}
+                    <div className="absolute inset-0 bg-gradient-to-b from-[#FFFDF0] via-[#D4AF37] to-[#8C6212] transition-all duration-500 group-hover:from-[#FFFFFF] group-hover:via-[#F3E5AB] group-hover:to-[#B38728]"></div>
                     
-                    {/* Inner Edge Highlight */}
-                    <div className="absolute inset-0 rounded-[1.5rem] md:rounded-full border border-white/40 pointer-events-none"></div>
+                    {/* Inner Edge Bevel Highlight */}
+                    <div className="absolute inset-0 rounded-[1.8rem] md:rounded-full border border-white/50 pointer-events-none"></div>
 
-                    {/* Animated Glare/Shine */}
-                    <div className="absolute top-0 left-[-100%] w-[50%] h-full bg-gradient-to-r from-transparent via-white/50 to-transparent skew-x-[-20deg] group-hover:left-[200%] transition-all duration-1000 ease-in-out"></div>
+                    {/* Continuous & Hover Animated Light Ray */}
+                    <motion.div 
+                      initial={{ x: '-150%' }}
+                      animate={{ x: '250%' }}
+                      transition={{ repeat: Infinity, duration: 3, ease: 'easeInOut', repeatDelay: 1.5 }}
+                      className="absolute top-0 left-0 w-1/2 h-full bg-gradient-to-r from-transparent via-white/60 to-transparent skew-x-[-25deg] pointer-events-none"
+                    />
 
-                    <span className="relative z-10 text-[#2A2000] drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)]">
-                      {status === 'loading' ? 'جاري التسجيل...' : 'عرفني لما يجهز'}
+                    {/* Button Content */}
+                    <span className="relative z-10 text-[#1F1600] font-extrabold tracking-wide drop-shadow-[0_1px_1px_rgba(255,255,255,0.6)] flex items-center gap-2">
+                      {status === 'loading' ? (
+                        <>
+                          <svg className="animate-spin h-5 w-5 text-[#1F1600]" viewBox="0 0 24 24" fill="none">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                          </svg>
+                          <span>جاري الحجز الملكي...</span>
+                        </>
+                      ) : (
+                        <>
+                          <span>عرفني لما يجهز</span>
+                          <span className="text-sm font-normal text-[#1F1600]/80">✦</span>
+                        </>
+                      )}
                     </span>
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 rotate-180 hidden md:block text-[#2A2000] drop-shadow-[0_1px_1px_rgba(255,255,255,0.5)] group-hover:translate-x-1 transition-transform duration-300">
-                      <path d="M5 12h14M12 5l7 7-7 7"/>
-                    </svg>
+
+                    {/* Directional Arrow with Leap Animation */}
+                    {status !== 'loading' && (
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="relative z-10 rotate-180 hidden md:block text-[#1F1600] drop-shadow-[0_1px_1px_rgba(255,255,255,0.6)] group-hover:-translate-x-1.5 transition-transform duration-300">
+                        <path d="M5 12h14M12 5l7 7-7 7"/>
+                      </svg>
+                    )}
                   </motion.button>
                 </motion.form>
 

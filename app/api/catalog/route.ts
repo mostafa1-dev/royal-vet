@@ -1,9 +1,17 @@
 import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export async function GET() {
+  // Accurately log catalog download event to database
+  try {
+    await prisma.catalogDownload.create({ data: {} });
+  } catch (err) {
+    console.error('Failed to log catalog download:', err);
+  }
+
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://addlynusetvlnhggzwnj.supabase.co';
   // Add a real-time timestamp to force browsers and CDNs to fetch the newly uploaded file every time
   const fileUrl = `${supabaseUrl}/storage/v1/object/public/assets/catalog.pdf?t=${Date.now()}`;
@@ -19,4 +27,5 @@ export async function GET() {
 
   return response;
 }
+
 

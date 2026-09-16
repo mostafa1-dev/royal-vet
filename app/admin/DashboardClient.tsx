@@ -1,8 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { updateStatus, deleteEntry, logout, uploadCatalog, getSignedCatalogUploadUrl, notifyCatalogUpdated } from './actions';
+import { 
+  updateStatus, 
+  deleteEntry, 
+  logout, 
+  uploadCatalog, 
+  getSignedCatalogUploadUrl, 
+  notifyCatalogUpdated,
+  getCatalogDownloadsCount 
+} from './actions';
 
 type WaitlistEntry = {
   id: number;
@@ -12,11 +20,38 @@ type WaitlistEntry = {
   createdAt: Date;
 };
 
-export default function DashboardClient({ initialData }: { initialData: WaitlistEntry[] }) {
+export default function DashboardClient({ 
+  initialData, 
+  initialDownloadsCount = 0 
+}: { 
+  initialData: WaitlistEntry[];
+  initialDownloadsCount?: number;
+}) {
   const [data, setData] = useState(initialData);
+  const [downloadsCount, setDownloadsCount] = useState(initialDownloadsCount);
   const [search, setSearch] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+
+  // Real-time background sync for downloads count (every 10 seconds)
+  useEffect(() => {
+    let isMounted = true;
+    const interval = setInterval(async () => {
+      try {
+        const count = await getCatalogDownloadsCount();
+        if (isMounted) {
+          setDownloadsCount(count);
+        }
+      } catch (err) {
+        // silent fail on background poll
+      }
+    }, 10000);
+
+    return () => {
+      isMounted = false;
+      clearInterval(interval);
+    };
+  }, []);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -222,18 +257,67 @@ export default function DashboardClient({ initialData }: { initialData: Waitlist
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="glass-premium p-6 rounded-2xl border border-[#D4AF37]/30">
-          <h3 className="text-gray-400 mb-1">إجمالي المسجلين</h3>
-          <p className="text-4xl font-bold text-white">{total}</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="glass-premium p-6 rounded-2xl border border-[#D4AF37]/30 relative overflow-hidden group hover:border-[#D4AF37]/60 transition-all duration-300">
+          <div className="flex justify-between items-start mb-2">
+            <h3 className="text-gray-400 text-sm">إجمالي المسجلين</h3>
+            <span className="p-2 rounded-xl bg-[#D4AF37]/10 text-[#D4AF37]">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+            </span>
+          </div>
+          <p className="text-4xl font-bold text-white font-serif tracking-tight">{total}</p>
         </div>
-        <div className="glass-premium p-6 rounded-2xl border border-white/10">
-          <h3 className="text-gray-400 mb-1">عملاء جدد</h3>
-          <p className="text-4xl font-bold text-green-400">{newContacts}</p>
+
+        <div className="glass-premium p-6 rounded-2xl border border-white/10 relative overflow-hidden group hover:border-green-500/40 transition-all duration-300">
+          <div className="flex justify-between items-start mb-2">
+            <h3 className="text-gray-400 text-sm">عملاء جدد</h3>
+            <span className="p-2 rounded-xl bg-green-500/10 text-green-400">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <line x1="19" y1="8" x2="19" y2="14" />
+                <line x1="22" y1="11" x2="16" y2="11" />
+              </svg>
+            </span>
+          </div>
+          <p className="text-4xl font-bold text-green-400 font-serif tracking-tight">{newContacts}</p>
         </div>
-        <div className="glass-premium p-6 rounded-2xl border border-white/10">
-          <h3 className="text-gray-400 mb-1">تم التواصل</h3>
-          <p className="text-4xl font-bold text-gray-300">{contacted}</p>
+
+        <div className="glass-premium p-6 rounded-2xl border border-white/10 relative overflow-hidden group hover:border-gray-400/40 transition-all duration-300">
+          <div className="flex justify-between items-start mb-2">
+            <h3 className="text-gray-400 text-sm">تم التواصل</h3>
+            <span className="p-2 rounded-xl bg-gray-500/10 text-gray-300">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="20 6 9 17 4 12" />
+              </svg>
+            </span>
+          </div>
+          <p className="text-4xl font-bold text-gray-300 font-serif tracking-tight">{contacted}</p>
+        </div>
+
+        <div className="glass-premium p-6 rounded-2xl border border-[#D4AF37]/40 relative overflow-hidden bg-gradient-to-br from-[#D4AF37]/10 via-transparent to-transparent group hover:border-[#D4AF37] hover:shadow-[0_0_30px_rgba(212,175,55,0.2)] transition-all duration-500">
+          <div className="flex justify-between items-start mb-2">
+            <h3 className="text-[#D4AF37] font-medium text-sm flex items-center gap-2">
+              تحميلات الكتالوج
+              <span className="inline-flex items-center justify-center w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="محدث لحظياً" />
+            </h3>
+            <span className="p-2 rounded-xl bg-[#D4AF37]/20 text-[#D4AF37] shadow-[0_0_15px_rgba(212,175,55,0.2)] group-hover:scale-110 transition-transform">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+            </span>
+          </div>
+          <div className="flex items-baseline gap-2">
+            <p className="text-4xl font-bold text-white font-serif tracking-tight">{downloadsCount}</p>
+            <span className="text-xs text-[#D4AF37]/70 font-sans">تنزيل مباشر</span>
+          </div>
         </div>
       </div>
 

@@ -56,6 +56,33 @@ export async function getWaitlistData() {
   }
 }
 
+export async function getCatalogDownloadsCount() {
+  try {
+    await requireAdmin();
+    const count = await prisma.catalogDownload.count();
+    return count;
+  } catch (error) {
+    console.error('Failed to fetch catalog downloads count:', error);
+    return 0;
+  }
+}
+
+export async function getDashboardData() {
+  try {
+    await requireAdmin();
+    const [waitlist, downloadsCount] = await Promise.all([
+      prisma.waitlist.findMany({
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.catalogDownload.count(),
+    ]);
+    return { waitlist, downloadsCount };
+  } catch (error) {
+    console.error('Failed to fetch dashboard data:', error);
+    return { waitlist: [], downloadsCount: 0 };
+  }
+}
+
 export async function updateStatus(id: number, newStatus: string) {
   try {
     await requireAdmin();

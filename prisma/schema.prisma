@@ -20,3 +20,8 @@ model Waitlist {
   status    String   @default("NEW") // "NEW" | "CONTACTED"
   createdAt DateTime @default(now())
 }
+
+model CatalogDownload {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+}
