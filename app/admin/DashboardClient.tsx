@@ -46,20 +46,10 @@ export default function DashboardClient({ initialData }: { initialData: Waitlist
       const signedRes = await getSignedCatalogUploadUrl();
 
       if (signedRes.error || !signedRes.signedUrl) {
-        console.warn('Falling back to server action upload due to signed URL error:', signedRes.error);
-        // Fallback for smaller files
-        const formData = new FormData();
-        formData.append('catalog', file);
-        const result = await uploadCatalog(formData);
         setIsUploading(false);
         setUploadProgress(null);
         e.target.value = '';
-
-        if (result.error) {
-          alert(result.error);
-        } else {
-          alert('تم رفع وتحديث الكتالوج بنجاح! 🚀');
-        }
+        alert('تعذر تجهيز الرفع: ' + (signedRes.error || 'تأكد من إعدادات المفاتيح والصلاحيات'));
         return;
       }
 
@@ -86,7 +76,7 @@ export default function DashboardClient({ initialData }: { initialData: Waitlist
           alert(`تم رفع وتحديث الكتالوج بنجاح (${(file.size / (1024 * 1024)).toFixed(1)} ميجابايت)! 🚀`);
         } else {
           console.error('Direct upload failed:', xhr.status, xhr.responseText);
-          alert('فشل رفع الملف إلى مساحة التخزين. تأكد من إعدادات Supabase Storage.');
+          alert(`فشل رفع الملف إلى مساحة التخزين (كود: ${xhr.status}) - ${xhr.responseText || 'تأكد من إعدادات Supabase Storage'}`);
         }
       };
 
@@ -94,16 +84,16 @@ export default function DashboardClient({ initialData }: { initialData: Waitlist
         setIsUploading(false);
         setUploadProgress(null);
         e.target.value = '';
-        alert('حدث خطأ في الاتصال أثناء رفع الملف.');
+        alert('حدث خطأ في الاتصال أثناء نقل الملف إلى مساحة التخزين.');
       };
 
       xhr.send(file);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Upload exception:', err);
       setIsUploading(false);
       setUploadProgress(null);
       e.target.value = '';
-      alert('حدث خطأ غير متوقع أثناء الاتصال بالخادم.');
+      alert('حدث خطأ غير متوقع: ' + (err?.message || String(err)));
     }
   };
 

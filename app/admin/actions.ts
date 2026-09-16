@@ -4,13 +4,13 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
-import { supabase } from '../utils/supabase';
+import { supabase, getSupabaseAdmin } from '../utils/supabase';
 
 async function requireAdmin() {
   const cookieStore = await cookies();
   const token = cookieStore.get('admin_token')?.value;
   if (token !== 'authenticated') {
-    throw new Error('غير مصرح لك بالقيام بهذا الإجراء');
+    throw new Error('غير مصرح لك بالقيام بهذا الإجراء (انتهت الجلسة أو لم يتم تسجيل الدخول)');
   }
 }
 
@@ -93,19 +93,20 @@ export async function deleteEntry(id: number) {
 export async function getSignedCatalogUploadUrl() {
   try {
     await requireAdmin();
-    const { data, error } = await supabase.storage
+    const adminClient = getSupabaseAdmin();
+    const { data, error } = await adminClient.storage
       .from('assets')
       .createSignedUploadUrl('catalog.pdf', { upsert: true });
 
     if (error || !data) {
       console.error('Supabase signed upload URL error:', error);
-      return { error: 'فشل في إنشاء رابط الرفع المباشر من مساحة التخزين' };
+      return { error: `خطأ من مساحة التخزين: ${error?.message || 'تعذر إنشاء رابط الرفع'}` };
     }
 
-    return { signedUrl: data.signedUrl, path: data.path };
-  } catch (error) {
+    return { signedUrl: data.signedUrl, path: data.path, token: data.token };
+  } catch (error: any) {
     console.error('Error in getSignedCatalogUploadUrl:', error);
-    return { error: 'غير مصرح لك أو حدث خطأ أثناء تجهيز الرفع' };
+    return { error: error?.message || 'غير مصرح لك أو حدث خطأ أثناء تجهيز الرفع' };
   }
 }
 
@@ -134,8 +135,9 @@ export async function uploadCatalog(formData: FormData) {
     }
 
     const arrayBuffer = await file.arrayBuffer();
+    const adminClient = getSupabaseAdmin();
 
-    const { error } = await supabase.storage
+    const { error } = await adminClient.storage
       .from('assets')
       .upload('catalog.pdf', arrayBuffer, {
         contentType: 'application/pdf',
@@ -144,15 +146,15 @@ export async function uploadCatalog(formData: FormData) {
 
     if (error) {
       console.error('Supabase upload error:', error);
-      return { error: 'فشل في رفع الملف، تأكد من إعدادات مساحة التخزين' };
+      return { error: `فشل في رفع الملف: ${error.message}` };
     }
 
     revalidatePath('/admin');
     revalidatePath('/api/catalog');
     revalidatePath('/');
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Failed to upload catalog:', error);
-    return { error: 'حدث خطأ غير متوقع أثناء الرفع' };
+    return { error: error?.message || 'حدث خطأ غير متوقع أثناء الرفع' };
   }
 }
