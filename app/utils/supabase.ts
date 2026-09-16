@@ -7,11 +7,21 @@ const defaultUrl = 'https://addlynusetvlnhggzwnj.supabase.co';
  * SUPABASE_SERVICE_ROLE_KEY environment variable is always read in serverless functions.
  */
 export function getSupabaseAdmin(): SupabaseClient {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || defaultUrl;
-  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = (process.env.NEXT_PUBLIC_SUPABASE_URL || defaultUrl).trim();
+  let serviceKey = (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim();
+
+  // Strip wrapping quotes if pasted with quotes
+  if ((serviceKey.startsWith('"') && serviceKey.endsWith('"')) || (serviceKey.startsWith("'") && serviceKey.endsWith("'"))) {
+    serviceKey = serviceKey.slice(1, -1).trim();
+  }
 
   if (!serviceKey || serviceKey === 'dummy_key_prevent_build_crash') {
-    throw new Error('مفتاح SUPABASE_SERVICE_ROLE_KEY غير معرف أو غير موجود في متغيرات بيئة السيرفر');
+    throw new Error('مفتاح SUPABASE_SERVICE_ROLE_KEY غير معرف أو غير موجود في متغيرات بيئة Vercel');
+  }
+
+  // Check for bullet character (8226 / •) caused by copying masked passwords
+  if (serviceKey.charCodeAt(0) > 255 || serviceKey.includes('•')) {
+    throw new Error('قيمة SUPABASE_SERVICE_ROLE_KEY في Vercel تم حفظها كنقاط سرية (••••) بدلاً من النص الفعلي للمفتاح. برجاء مسحها ولصق المفتاح الحقيقي.');
   }
 
   return createClient(supabaseUrl, serviceKey, {
