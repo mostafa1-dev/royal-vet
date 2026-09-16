@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { updateStatus, deleteEntry, logout, uploadCatalog } from './actions';
+import { updateStatus, deleteEntry, logout, uploadCatalog, getSignedCatalogUploadUrl, notifyCatalogUpdated } from './actions';
 
 type WaitlistEntry = {
   id: number;
@@ -16,32 +16,93 @@ export default function DashboardClient({ initialData }: { initialData: Waitlist
   const [data, setData] = useState(initialData);
   const [search, setSearch] = useState('');
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     
-    if (file.type !== 'application/pdf') {
+    // Validate file type
+    const isPdf = file.type === 'application/pdf' || file.name.toLowerCase().endsWith('.pdf');
+    if (!isPdf) {
       alert('يجب اختيار ملف PDF فقط');
+      e.target.value = '';
+      return;
+    }
+
+    // Check size against Supabase limit (50MB)
+    const MAX_SIZE_BYTES = 50 * 1024 * 1024;
+    if (file.size > MAX_SIZE_BYTES) {
+      alert(`حجم الملف (${(file.size / (1024 * 1024)).toFixed(1)} ميجابايت) يتجاوز الحد الأقصى لمساحة التخزين (50 ميجابايت). برجاء تقليل حجم الملف قليلاً.`);
+      e.target.value = '';
       return;
     }
 
     setIsUploading(true);
-    const formData = new FormData();
-    formData.append('catalog', file);
+    setUploadProgress(0);
 
     try {
-      const result = await uploadCatalog(formData);
-      
-      setIsUploading(false);
-      if (result.error) {
-        alert(result.error);
-      } else {
-        alert('تم رفع وتحديث الكتالوج بنجاح! 🚀');
+      // 1. Get signed upload URL directly from Supabase via server action
+      const signedRes = await getSignedCatalogUploadUrl();
+
+      if (signedRes.error || !signedRes.signedUrl) {
+        console.warn('Falling back to server action upload due to signed URL error:', signedRes.error);
+        // Fallback for smaller files
+        const formData = new FormData();
+        formData.append('catalog', file);
+        const result = await uploadCatalog(formData);
+        setIsUploading(false);
+        setUploadProgress(null);
+        e.target.value = '';
+
+        if (result.error) {
+          alert(result.error);
+        } else {
+          alert('تم رفع وتحديث الكتالوج بنجاح! 🚀');
+        }
+        return;
       }
+
+      // 2. Direct upload to Supabase Storage with progress tracking
+      // This completely bypasses Vercel's 4.5MB Serverless function limit!
+      const xhr = new XMLHttpRequest();
+      xhr.open('PUT', signedRes.signedUrl, true);
+      xhr.setRequestHeader('Content-Type', 'application/pdf');
+
+      xhr.upload.onprogress = (event) => {
+        if (event.lengthComputable) {
+          const percent = Math.round((event.loaded / event.total) * 100);
+          setUploadProgress(percent);
+        }
+      };
+
+      xhr.onload = async () => {
+        setIsUploading(false);
+        setUploadProgress(null);
+        e.target.value = '';
+
+        if (xhr.status >= 200 && xhr.status < 300) {
+          await notifyCatalogUpdated();
+          alert(`تم رفع وتحديث الكتالوج بنجاح (${(file.size / (1024 * 1024)).toFixed(1)} ميجابايت)! 🚀`);
+        } else {
+          console.error('Direct upload failed:', xhr.status, xhr.responseText);
+          alert('فشل رفع الملف إلى مساحة التخزين. تأكد من إعدادات Supabase Storage.');
+        }
+      };
+
+      xhr.onerror = () => {
+        setIsUploading(false);
+        setUploadProgress(null);
+        e.target.value = '';
+        alert('حدث خطأ في الاتصال أثناء رفع الملف.');
+      };
+
+      xhr.send(file);
     } catch (err) {
-      console.error(err);
+      console.error('Upload exception:', err);
       setIsUploading(false);
+      setUploadProgress(null);
+      e.target.value = '';
       alert('حدث خطأ غير متوقع أثناء الاتصال بالخادم.');
     }
   };
@@ -125,17 +186,34 @@ export default function DashboardClient({ initialData }: { initialData: Waitlist
             تصدير CSV
           </button>
           
-          <label className={`px-6 py-2 rounded-xl text-white transition border flex items-center gap-2 cursor-pointer ${
+          <label className={`relative overflow-hidden px-6 py-2 rounded-xl text-white transition border flex items-center gap-2 cursor-pointer select-none ${
             isUploading 
-              ? 'bg-[#D4AF37]/50 border-[#D4AF37]/50 opacity-50 cursor-not-allowed'
+              ? 'bg-[#D4AF37]/30 border-[#D4AF37]/60 cursor-not-allowed'
               : 'bg-[#D4AF37]/20 border-[#D4AF37]/30 hover:bg-[#D4AF37]/30'
           }`}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-              <polyline points="17 8 12 3 7 8"></polyline>
-              <line x1="12" y1="3" x2="12" y2="15"></line>
-            </svg>
-            {isUploading ? 'جاري الرفع...' : 'تحديث الكتالوج'}
+            {isUploading && uploadProgress !== null && (
+              <span 
+                className="absolute inset-y-0 right-0 bg-[#D4AF37]/40 transition-all duration-200 pointer-events-none"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            )}
+            {isUploading ? (
+              <svg className="animate-spin relative z-10" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeOpacity="0.25" />
+                <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" strokeLinecap="round" />
+              </svg>
+            ) : (
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="17 8 12 3 7 8"></polyline>
+                <line x1="12" y1="3" x2="12" y2="15"></line>
+              </svg>
+            )}
+            <span className="relative z-10 font-medium">
+              {isUploading 
+                ? (uploadProgress !== null ? `جاري الرفع ${uploadProgress}%` : 'جاري التحضير...') 
+                : 'تحديث الكتالوج'}
+            </span>
             <input 
               type="file" 
               accept="application/pdf" 
