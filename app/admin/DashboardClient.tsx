@@ -9,7 +9,7 @@ import {
   uploadCatalog, 
   getSignedCatalogUploadUrl, 
   notifyCatalogUpdated,
-  getCatalogDownloadsCount 
+  getDashboardData 
 } from './actions';
 
 type WaitlistEntry = {
@@ -32,26 +32,53 @@ export default function DashboardClient({
   const [search, setSearch] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
-  // Real-time background sync for downloads count (every 10 seconds)
-  useEffect(() => {
-    let isMounted = true;
-    const interval = setInterval(async () => {
-      try {
-        const count = await getCatalogDownloadsCount();
-        if (isMounted) {
-          setDownloadsCount(count);
+  // Real-time synchronization helper
+  const refreshData = async (showSpinner = false) => {
+    if (showSpinner) setIsRefreshing(true);
+    try {
+      const res = await getDashboardData();
+      if (res && res.success && Array.isArray(res.waitlist)) {
+        setData(res.waitlist);
+        if (typeof res.downloadsCount === 'number') {
+          setDownloadsCount(res.downloadsCount);
         }
-      } catch (err) {
-        // silent fail on background poll
+        setLastUpdated(new Date());
       }
-    }, 10000);
+    } catch (err) {
+      console.error('Real-time sync error:', err);
+    } finally {
+      if (showSpinner) setIsRefreshing(false);
+    }
+  };
+
+  // Real-time automatic background sync (every 8 seconds + instant sync on tab return)
+  useEffect(() => {
+    setLastUpdated(new Date());
+
+    const interval = setInterval(() => {
+      if (document.visibilityState === 'visible' && !isUploading) {
+        refreshData(false);
+      }
+    }, 8000);
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        refreshData(false);
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleVisibilityChange);
 
     return () => {
-      isMounted = false;
       clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleVisibilityChange);
     };
-  }, []);
+  }, [isUploading]);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -167,12 +194,52 @@ export default function DashboardClient({
     }
   };
 
+  // Egypt Cairo Timezone Formatting Helpers
+  const formatCairoDateTime = (dateInput: Date | string) => {
+    try {
+      const date = new Date(dateInput);
+      return date.toLocaleString('ar-EG', {
+        timeZone: 'Africa/Cairo',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true,
+      });
+    } catch {
+      return String(dateInput);
+    }
+  };
+
+  const getRelativeCairoTime = (dateInput: Date | string) => {
+    try {
+      const now = Date.now();
+      const time = new Date(dateInput).getTime();
+      const diffSeconds = Math.max(0, Math.floor((now - time) / 1000));
+
+      if (diffSeconds < 60) return 'الآن';
+      if (diffSeconds < 3600) {
+        const mins = Math.floor(diffSeconds / 60);
+        return `منذ ${mins} ${mins === 1 ? 'دقيقة' : mins === 2 ? 'دقيقتين' : mins <= 10 ? 'دقائق' : 'دقيقة'}`;
+      }
+      if (diffSeconds < 86400) {
+        const hours = Math.floor(diffSeconds / 3600);
+        return `منذ ${hours} ${hours === 1 ? 'ساعة' : hours === 2 ? 'ساعتين' : hours <= 10 ? 'ساعات' : 'ساعة'}`;
+      }
+      const days = Math.floor(diffSeconds / 86400);
+      return `منذ ${days} ${days === 1 ? 'يوم' : days === 2 ? 'يومين' : days <= 10 ? 'أيام' : 'يوم'}`;
+    } catch {
+      return '';
+    }
+  };
+
   const exportToCSV = () => {
-    const headers = ['الاسم', 'رقم الواتساب', 'تاريخ التسجيل', 'الحالة'];
+    const headers = ['الاسم', 'رقم الواتساب', 'تاريخ ووقت التسجيل (بتوقيت مصر)', 'الحالة'];
     const rows = filteredData.map(e => [
       e.name || 'لم يكتب',
       e.phone,
-      new Date(e.createdAt).toLocaleString('ar-EG'),
+      formatCairoDateTime(e.createdAt),
       e.status === 'NEW' ? 'جديد' : 'تم التواصل'
     ]);
     
@@ -197,15 +264,51 @@ export default function DashboardClient({
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-white font-serif mb-2">لوحة التحكم</h1>
-          <p className="text-[#D4AF37]">إدارة قائمة الانتظار</p>
+          <div className="flex items-center gap-3 mb-1">
+            <h1 className="text-3xl font-bold text-white font-serif">لوحة التحكم</h1>
+            <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-medium">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+              <span>مباشر ولحظي</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-[#D4AF37]">
+            <span>إدارة قائمة الانتظار</span>
+            {lastUpdated && (
+              <span className="text-gray-400 text-xs flex items-center gap-1">
+                • آخر فحص: {lastUpdated.toLocaleTimeString('ar-EG', { timeZone: 'Africa/Cairo', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true })}
+              </span>
+            )}
+          </div>
         </div>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Manual Refresh Button */}
+          <button 
+            onClick={() => refreshData(true)}
+            disabled={isRefreshing}
+            className="px-4 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition border border-white/20 flex items-center gap-2 text-sm disabled:opacity-50"
+            title="تحديث البيانات لحظياً من قاعدة البيانات"
+          >
+            <svg 
+              width="16" 
+              height="16" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="2" 
+              strokeLinecap="round" 
+              strokeLinejoin="round"
+              className={isRefreshing ? 'animate-spin text-[#D4AF37]' : ''}
+            >
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/>
+            </svg>
+            <span>{isRefreshing ? 'جاري التحديث...' : 'تحديث فوري'}</span>
+          </button>
+
           <button 
             onClick={exportToCSV}
-            className="px-6 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition border border-white/20 flex items-center gap-2"
+            className="px-5 py-2 rounded-xl bg-white/10 text-white hover:bg-white/20 transition border border-white/20 flex items-center gap-2 text-sm"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/>
             </svg>
             تصدير CSV
@@ -369,10 +472,13 @@ export default function DashboardClient({
                       {entry.phone}
                     </td>
                     <td className="p-4 text-gray-300 text-sm" suppressHydrationWarning>
-                      {new Date(entry.createdAt).toLocaleDateString('ar-EG', {
-                        year: 'numeric', month: 'short', day: 'numeric',
-                        hour: '2-digit', minute: '2-digit'
-                      })}
+                      <div className="flex flex-col">
+                        <span className="font-medium text-white">{formatCairoDateTime(entry.createdAt)}</span>
+                        <span className="text-xs text-[#D4AF37]/90 flex items-center gap-1.5 mt-0.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                          {getRelativeCairoTime(entry.createdAt)}
+                        </span>
+                      </div>
                     </td>
                     <td className="p-4">
                       <button 

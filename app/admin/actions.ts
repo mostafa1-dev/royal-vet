@@ -76,10 +76,15 @@ export async function getDashboardData() {
       }),
       prisma.catalogDownload.count(),
     ]);
-    return { waitlist, downloadsCount };
-  } catch (error) {
+    return { success: true, waitlist, downloadsCount };
+  } catch (error: any) {
     console.error('Failed to fetch dashboard data:', error);
-    return { waitlist: [], downloadsCount: 0 };
+    return { 
+      success: false, 
+      error: error?.message || 'فشل في جلب بيانات لوحة التحكم', 
+      waitlist: null, 
+      downloadsCount: null 
+    };
   }
 }
 

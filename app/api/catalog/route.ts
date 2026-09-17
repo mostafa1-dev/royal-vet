@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { revalidatePath } from 'next/cache';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -8,6 +9,7 @@ export async function GET() {
   // Accurately log catalog download event to database
   try {
     await prisma.catalogDownload.create({ data: {} });
+    revalidatePath('/admin');
   } catch (err) {
     console.error('Failed to log catalog download:', err);
   }

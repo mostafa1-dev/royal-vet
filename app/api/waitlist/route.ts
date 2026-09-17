@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { revalidatePath } from 'next/cache';
 
 export async function POST(request: Request) {
   try {
@@ -55,6 +56,13 @@ export async function POST(request: Request) {
         phone: normalizedPhone,
       },
     });
+
+    // Instantly invalidate admin dashboard cache so the registration appears immediately
+    try {
+      revalidatePath('/admin');
+    } catch (cacheErr) {
+      console.error('Failed to revalidate /admin cache:', cacheErr);
+    }
 
     return NextResponse.json({ success: true, data: waitlist }, { status: 201 });
   } catch (error) {
