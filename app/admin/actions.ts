@@ -4,7 +4,13 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
-import { supabase, getSupabaseAdmin } from '../utils/supabase';
+import { getSupabaseAdmin } from '../utils/supabase';
+
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+  return fallback;
+}
 
 async function requireAdmin() {
   const cookieStore = await cookies();
@@ -77,11 +83,11 @@ export async function getDashboardData() {
       prisma.catalogDownload.count(),
     ]);
     return { success: true, waitlist, downloadsCount };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to fetch dashboard data:', error);
     return { 
       success: false, 
-      error: error?.message || 'فشل في جلب بيانات لوحة التحكم', 
+      error: getErrorMessage(error, 'فشل في جلب بيانات لوحة التحكم'), 
       waitlist: null, 
       downloadsCount: null 
     };
@@ -136,9 +142,9 @@ export async function getSignedCatalogUploadUrl() {
     }
 
     return { signedUrl: data.signedUrl, path: data.path, token: data.token };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error in getSignedCatalogUploadUrl:', error);
-    return { error: error?.message || 'غير مصرح لك أو حدث خطأ أثناء تجهيز الرفع' };
+    return { error: getErrorMessage(error, 'غير مصرح لك أو حدث خطأ أثناء تجهيز الرفع') };
   }
 }
 
@@ -185,8 +191,8 @@ export async function uploadCatalog(formData: FormData) {
     revalidatePath('/api/catalog');
     revalidatePath('/');
     return { success: true };
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to upload catalog:', error);
-    return { error: error?.message || 'حدث خطأ غير متوقع أثناء الرفع' };
+    return { error: getErrorMessage(error, 'حدث خطأ غير متوقع أثناء الرفع') };
   }
 }

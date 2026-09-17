@@ -6,7 +6,6 @@ import {
   updateStatus, 
   deleteEntry, 
   logout, 
-  uploadCatalog, 
   getSignedCatalogUploadUrl, 
   notifyCatalogUpdated,
   getDashboardData 
@@ -33,7 +32,8 @@ export default function DashboardClient({
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(() => new Date());
+  const [currentTimestamp, setCurrentTimestamp] = useState<number>(() => Date.now());
 
   // Real-time synchronization helper
   const refreshData = async (showSpinner = false) => {
@@ -45,7 +45,9 @@ export default function DashboardClient({
         if (typeof res.downloadsCount === 'number') {
           setDownloadsCount(res.downloadsCount);
         }
-        setLastUpdated(new Date());
+        const now = new Date();
+        setLastUpdated(now);
+        setCurrentTimestamp(now.getTime());
       }
     } catch (err) {
       console.error('Real-time sync error:', err);
@@ -56,8 +58,6 @@ export default function DashboardClient({
 
   // Real-time automatic background sync (every 8 seconds + instant sync on tab return)
   useEffect(() => {
-    setLastUpdated(new Date());
-
     const interval = setInterval(() => {
       if (document.visibilityState === 'visible' && !isUploading) {
         refreshData(false);
@@ -150,12 +150,13 @@ export default function DashboardClient({
       };
 
       xhr.send(file);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Upload exception:', err);
       setIsUploading(false);
       setUploadProgress(null);
       e.target.value = '';
-      alert('حدث خطأ غير متوقع: ' + (err?.message || String(err)));
+      const message = err instanceof Error ? err.message : String(err);
+      alert('حدث خطأ غير متوقع: ' + message);
     }
   };
 
@@ -212,11 +213,11 @@ export default function DashboardClient({
     }
   };
 
-  const getRelativeCairoTime = (dateInput: Date | string) => {
+  const getRelativeCairoTime = (dateInput: Date | string, nowTimestamp: number) => {
     try {
-      const now = Date.now();
+      if (!nowTimestamp) return '';
       const time = new Date(dateInput).getTime();
-      const diffSeconds = Math.max(0, Math.floor((now - time) / 1000));
+      const diffSeconds = Math.max(0, Math.floor((nowTimestamp - time) / 1000));
 
       if (diffSeconds < 60) return 'الآن';
       if (diffSeconds < 3600) {
@@ -476,7 +477,7 @@ export default function DashboardClient({
                         <span className="font-medium text-white">{formatCairoDateTime(entry.createdAt)}</span>
                         <span className="text-xs text-[#D4AF37]/90 flex items-center gap-1.5 mt-0.5">
                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                          {getRelativeCairoTime(entry.createdAt)}
+                          {getRelativeCairoTime(entry.createdAt, currentTimestamp)}
                         </span>
                       </div>
                     </td>
